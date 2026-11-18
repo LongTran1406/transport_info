@@ -1,0 +1,4 @@
+dotenv
+requests
+gtfs-realtime-bindings
+pandas
