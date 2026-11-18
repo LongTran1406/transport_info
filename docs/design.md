@@ -3,6 +3,7 @@ See [problem statement](ml-design-document.md)
 
 ## 1. Data sources
 | Feed | Format | Endpoint | Update freq | Pull freq | Limits |
+|---|---|---|---|---|---|
 | Static GTFS (Bus Schedule) | ZIP (CSV) | https://api.transport.nsw.gov.au/v1/gtfs/schedule/buses | 1 day | 1 day | 60000 requests/day for all request |
 | Vehicle Positions (Buses) | Protobuf | https://api.transport.nsw.gov.au/v1/gtfs/vehiclepos/buses | 15s | 15s | 60000 requests/day for all request |
 | Trip Updates (Buses) | Protobuf | https://api.transport.nsw.gov.au/v1/gtfs/realtime/buses | 15s | 15s | 60000 requests/day for all request |
