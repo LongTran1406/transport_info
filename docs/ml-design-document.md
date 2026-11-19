@@ -46,8 +46,7 @@ and by stops ahead.
   (peak hours, a route, or far-ahead stops)
 
 ## 6. Model approach (decided)
-One model for all trips, with a "trip started" input; inputs only available for running
-trips (current delay, stops ahead, vehicle position) are left missing for future trips.
+One model for all trips, with a "trip started" input; inputs only available for running trips (current delay, stops ahead, vehicle position) are left missing for future trips.
 TfNSW's predictions are not an input: TfNSW is the benchmark.
 Reason: one clear story and a clean head-to-head comparison; covers the pre-trip gap
 TfNSW leaves. Split into two models only if evaluation shows one segment suffers.
