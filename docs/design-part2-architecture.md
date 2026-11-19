@@ -16,7 +16,39 @@ Guiding principles:
 
 ## Data flow
 
-&#91;embedded content: data flow · 7 stages on one Hetzner VM\]
+```mermaid
+flowchart TD
+    TFNSW["TfNSW Open Data API<br/>realtime feeds + static GTFS"]
+    POLLER["Poller (stage 1, always on)<br/>every 30 s, Sydney routes, gzipped protobuf"]
+
+    subgraph MINIO["MinIO (S3 API) - stage 2 - 30-day retention"]
+        BRONZE["Bronze<br/>raw protobuf"] --> SILVER["Silver<br/>clean Parquet"] --> GOLD["Gold<br/>feature tables + labels"]
+    end
+
+    FEAST["Feast (stage 3)<br/>offline: Gold Parquet / online: Redis"]
+    SCORER["Scorer (stage 5, every 60 s)<br/>one batch XGBoost call"]
+    REDIS["Redis<br/>predictions"]
+    API["FastAPI<br/>internal only"]
+    ST["Streamlit<br/>public page (stage 7)"]
+    CADDY["Caddy<br/>HTTPS to visitors"]
+
+    AIRFLOW["Airflow (stages 1-3, 6)<br/>hourly Bronze to Gold, daily GTFS,<br/>drift checks, retraining"]
+    MLFLOW["MLflow (stage 3)<br/>experiments, registry, production alias"]
+    MON["Prometheus + Grafana (stage 6)<br/>service alerts"]
+
+    TFNSW --> POLLER --> BRONZE
+    TFNSW -- "static GTFS, daily" --> AIRFLOW
+    AIRFLOW -- "runs transforms" --> MINIO
+    GOLD --> FEAST
+    FEAST -- "training sets" --> MLFLOW
+    FEAST -- "online features" --> SCORER
+    MLFLOW -- "production model" --> SCORER
+    SCORER -- "writes" --> REDIS --> API --> ST --> CADDY
+
+    MON -. "scrapes" .-> POLLER
+    MON -.-> SCORER
+    MON -.-> API
+```
 
 Feeds move down from TfNSW to visitors. Feast hands the same features to training (MLflow, on the right) and to the every-minute scorer, and the scorer loads whichever model carries the `@production` alias. Not drawn: the scorer's sampled prediction log goes back to MinIO for Stage 6, and GitHub Actions deploys every container over SSH (Stage 4).
 
