@@ -1,5 +1,5 @@
-
 import logging
+import os
 import re
 from datetime import datetime, timedelta, timezone
 
@@ -14,8 +14,8 @@ logger = logging.getLogger(__name__)
 
 minio_client = Minio(
     "minio:9000",
-    access_key="minioadmin",
-    secret_key="minioadmin",
+    access_key=os.environ["MINIO_ROOT_USER"],
+    secret_key=os.environ["MINIO_ROOT_PASSWORD"],
     secure=False
 )
 
@@ -72,8 +72,8 @@ def check_feed_freshness(feed):
 
     if latest_timestamp is None:
         logger.error("[%s] No Bronze files found.", feed)
-        return
-
+        return False
+    
     age = now - latest_timestamp
 
     if age > timedelta(minutes=MAX_AGE_MINUTES):
@@ -83,26 +83,27 @@ def check_feed_freshness(feed):
             age.total_seconds() / 60,
             latest_object
         )
+        return False
     else:
         logger.info(
             "[%s] FRESH: Latest file is %.1f minutes old.",
             feed,
             age.total_seconds() / 60
         )
+    return True
 
 
 def check_bronze_realtime_freshness():
-    """Checks freshness of all Bronze realtime feeds."""
-
+    bad = []
     for feed in FEEDS:
         try:
-            check_feed_freshness(feed)
+            if not check_feed_freshness(feed):
+                bad.append(feed)
         except Exception:
-            logger.exception(
-                "[%s] Failed to check Bronze freshness.",
-                feed
-            )
-
+            logger.exception("[%s] Failed to check Bronze freshness.", feed)
+            bad.append(feed)
+    if bad:
+        raise RuntimeError(f"Stale or missing Bronze feeds: {bad}")
 
 if __name__ == "__main__":
     check_bronze_realtime_freshness()

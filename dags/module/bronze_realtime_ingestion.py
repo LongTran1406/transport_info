@@ -36,8 +36,8 @@ TRIP_UPDATES_URL = "https://api.transport.nsw.gov.au/v1/gtfs/realtime/buses"
 # MinIO client
 minio_client = Minio(
     "minio:9000",
-    access_key="minioadmin",
-    secret_key="minioadmin",
+    access_key=os.environ["MINIO_ROOT_USER"],
+    secret_key=os.environ["MINIO_ROOT_PASSWORD"],
     secure=False
 )
 
